@@ -22,7 +22,8 @@ struct powerup {
     int type;
 
     // 1 -> spreadshot
-    // 2 -> double points (wip)
+    // 2 -> frenzy
+    // 3 -> double points (wip)
 };
 
 int main (){
@@ -60,6 +61,8 @@ int main (){
     bool r = true;
     int blinktimer = 160;
 
+    float cooldown = 0;
+
     std::vector<bullet> bullets;
     int btick = 0;
     int fireface = 0;
@@ -68,13 +71,23 @@ int main (){
     int ptick = 0;
     int pface = 0;
     int poweruptime = 0;
-    int powerup;
+    int powerup = 0;
+
+    int maxbullets[] = { 2, 6, 4};
+    const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
 
     while (r){
         blinktimer--;
         
         if (poweruptime > 0){
             poweruptime--;
+        }
+        else {
+            powerup = 0;
+        }
+
+        if (cooldown > 0){
+            cooldown--;
         }
 
         if (blinktimer > 155){
@@ -100,12 +113,39 @@ int main (){
         if ((ch == 'd' || ch == KEY_RIGHT) && Xpl < Xborder - 4){
             Xpl++;
         }
-        if (ch == ' ' && bullets.size() < 2){
-            bullets.push_back({Xpl, Ypl - 1});
-            fireface  = 10;
+        if (ch == ' ' && cooldown == 0){
+            switch (powerup){
+                case 1:
+                    if (bullets.size() <= 5){
+                    bullets.push_back({Xpl, Ypl - 1, -1});
+                    bullets.push_back({Xpl, Ypl - 1, 0});
+                    bullets.push_back({Xpl, Ypl - 1, 1});
+                    fireface = 10;
+                    cooldown = 32;
+                    }
+                    break;
+                case 2: 
+                    if (bullets.size() <= 3){
+                        bullets.push_back({Xpl, Ypl - 1, 0});
+                        fireface = 10;
+                        cooldown = 8;
+                    }
+                    break;
+                default:
+                    if (bullets.size() <= 1){
+                        bullets.push_back({Xpl, Ypl - 1, 0});
+                        fireface = 10;
+                        cooldown = 32;
+                    }
+                    break;
+            }
         }
         if (ch == '1' && powerups.size () < 1) {
-            powerups.push_back({Xborder / 2, 1, 1});
+            powerups.push_back({Xpl, 1, 1});
+        }
+
+        if (ch == '2' && powerups.size () < 1) {
+            powerups.push_back({Xpl, 1, 2});
         }
 
         if (pface > 0){
@@ -127,7 +167,7 @@ int main (){
 
             for (int i = powerups.size() - 1; i >= 0; i--){
                 if (powerups[i].y == Ypl && (powerups[i].x >= Xpl - 3 && powerups[i].x <= Xpl + 3)){
-                    powerup = 1;
+                    powerup = powerups[i].type;
                     pface = 10;
                     poweruptime = 170;
                     powerups.erase(powerups.begin() + i);
@@ -147,6 +187,7 @@ int main (){
             btick = 0;
             for (int i = 0; i < bullets.size(); i++){
                 bullets[i].y--;
+                bullets[i].x += bullets[i].dx;
             }
 
             for (int i = bullets.size() - 1; i >= 0; i--){
@@ -166,7 +207,7 @@ int main (){
         for (int i = 0; i < powerups.size(); i++){
             mvprintw(powerups[i].y, powerups[i].x, "#");
         }
-        mvprintw(0, 0, "bullets=%d/2 powertime=%d", (int)bullets.size(), poweruptime/32);
+        mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
         wnoutrefresh(stdscr);
         doupdate();
 
