@@ -62,7 +62,7 @@ int main (){
     int Xborder, Yborder;
     getmaxyx(stdscr, Yborder, Xborder); //window/termial broder
 
-    if (Yborder < 15 || Xborder < 25){
+    if (Yborder < 22 || Xborder < 50){
         endwin();
         printf("Terminal too small: please increase the window size!\n" );
         return 1;
@@ -298,7 +298,7 @@ int main (){
                         else {
                             s += 50;
                         }
-                        if (rand() % 8 == 0){
+                        if (rand() % 5 == 0){
                             powerups.push_back({mice[m].x + 1, mice[m].y + 1, 1 + (rand() % 3)});
                         }
                         bullets.erase(bullets.begin() + i);
@@ -349,7 +349,7 @@ int main (){
                if (mice[i].alive == false){
                     continue;
                } 
-               if (abs(y - mice[i].y) <= 2 && mice[i].x + 3 >= x - 2 && mice[i].x - 3 <= x + 2){
+               if (abs(y - mice[i].y) <= 2 && mice[i].x + 2 >= x - 2 && mice[i].x <= x + 2){
                     mice[i].alive = false;
                     if (powerup == 3){
                         s += 100;
@@ -357,8 +357,8 @@ int main (){
                     else {
                         s += 50;
                     }
-                    if (rand() % 8 == 0){
-                        powerups.push_back({mice[m].x + 1, mice[m].y + 1, 1 + (rand() % 3)});
+                    if (rand() % 3 == 0){
+                        powerups.push_back({mice[i].x + 1, mice[i].y + 1, 1 + (rand() % 3)});
                     }
                }
             }
@@ -380,17 +380,26 @@ int main (){
         mtick++;
 
         std::vector<int> alive; // mice drop bobm
-        if (mtick > 3){
-            alive.clear();
-            for (int i = 0; i < mice.size(); i++){
-                if (mice[i]. alive == true){
-                    alive.push_back(i);
-                }
+        alive.clear();
+        for (int i = 0; i < mice.size(); i++){
+            if (mice[i].alive == true){
+                alive.push_back(i);
             }
-            for (int i = 0; i < alive.size(); i++){
-                if (rand() % 501 == 0){
-                    powerups.push_back({mice[alive[i]].x, mice[alive[i]].y, 4});
-                }
+        }
+        for (int i = 0; i < alive.size(); i++){
+            if (rand() % 1001 == 0){
+                powerups.push_back({mice[alive[i]].x + 1, mice[alive[i]].y + 1, 4});
+            }
+        }
+
+        if (alive.size() == 0){
+            w = true;
+            r = false;
+        }
+
+        for (int i = 0; i < alive.size(); i++){
+            if (mice[alive[i]].y == Ypl - 1){
+                r = false;
             }
         }
 
@@ -470,5 +479,7 @@ int main (){
     }
 
     endwin();
+    printf(w == 1 ? "You Win :) Score:%d\n" : "You lose :( Score:%d\n", s);
+
     return 0;
 }
