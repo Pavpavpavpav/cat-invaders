@@ -93,7 +93,7 @@ int main (){
     int bombblink = 31;
     int bobmtype = 0;
 
-    int maxbullets[] = { 2, 6, 4};
+    int maxbullets[] = { 2, 6, 4, 2};
     const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
 
     std::vector<mouse> mice;
@@ -232,6 +232,12 @@ int main (){
                             powerup = powerups[i].type;
                             pface = 10;
                             poweruptime = 170;
+                            if (powerup == 3){
+                                s+= 200;
+                            }
+                            else {
+                                s += 100;
+                            }
                             break;  
                     }
                     powerups.erase(powerups.begin() + i);
@@ -263,9 +269,36 @@ int main (){
                 for (int p = powerups.size() - 1; p >= 0; p--){
                     if (powerups[p].type == 4 && powerups[p].x == bullets[i].x && abs(powerups[p].y - bullets[i].y) <= 1){
                         boom.push_back({powerups[p].x, powerups[p].y, 16, 0});
+                        if (powerup == 3){
+                            s += 30;
+                        }
+                        else {
+                            s += 15;
+                        }
                         bullets.erase(bullets.begin() + i);
                         powerups.erase(powerups.begin() + p);
                         break;
+                    }
+                }
+            }
+
+            for (int i = bullets.size() - 1; i >= 0; i--){
+                for (int m = 0; m < mice.size(); m++){
+                    if (mice[m].alive == false){
+                        continue;
+                    }
+                    if (abs(mice[m].y - bullets[i].y) <= 1 && bullets[i].x >= mice[m].x && bullets[i]. x <= mice[m].x + 2){
+                        mice[m].alive = false;
+                        if (powerup == 3){
+                            s += 100;
+                        }
+                        else {
+                            s += 50;
+                        }
+                        if (rand() % 15 == 0){
+                            powerups.push_back({mice[m].x + 1, mice[m].y + 1, 1 + (rand() % 3)});
+                        }
+                        bullets.erase(bullets.begin() + i);
                     }
                 }
             }
@@ -291,7 +324,12 @@ int main (){
                 if (abs(x - powerups[i].x) <= 2 && abs(y - powerups[i].y) <= 2 ){
                     if (powerups[i].type == 4){
                         boom.push_back({powerups[i].x, powerups[i].y, 16, 10});
-                        
+                        if (powerup == 3){
+                            s += 10;
+                        }
+                        else {
+                            s += 5;
+                        }
                     }
                     powerups.erase(powerups.begin() + i);
                 }
@@ -381,7 +419,7 @@ int main (){
             }
         }
         mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
-        mvprintw(1, 0, "lives=%d/3", lives);
+        mvprintw(1, 0, "lives=%d/3 score=%d", lives, s);
         wnoutrefresh(stdscr);
         doupdate();
 
