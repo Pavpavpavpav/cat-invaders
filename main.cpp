@@ -3,6 +3,9 @@
 #include <string>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+
+//Hi! If u are trying to edit this code to tweak my game feel free to do so! I have left some comments that can explain which part of the code is what, but you might still have to dig a bit cos it is not the most optimized :P
 
 struct catsprite {
     std::vector<std::string> sprite;
@@ -52,10 +55,12 @@ int main (){
         }
     };
 
+    srand(time(0));
+
     int currsprite = 0;
 
     int Xborder, Yborder;
-    getmaxyx(stdscr, Yborder, Xborder);
+    getmaxyx(stdscr, Yborder, Xborder); //window/termial broder
 
     if (Yborder < 15 || Xborder < 25){
         endwin();
@@ -66,7 +71,7 @@ int main (){
     int Xpl = Xborder / 2;
     int Ypl = Yborder - 4;
 
-    int lives = 3;
+    int lives = 3; //# of bombs the cat can withstanc
     int hurtface = 0;
 
     bool r = true;
@@ -90,6 +95,17 @@ int main (){
 
     int maxbullets[] = { 2, 6, 4};
     const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
+
+    std::vector<mouse> mice;
+    for (int row = 0; row < 4; row++;){
+        for (int col = 0; col < 8; col++){
+            mice.push_back({4 + col * 5, 3 + row * 2, true});
+        }
+    }
+    int dir = 1;
+    int mtick = 0;
+    int s = 0;
+    bool w = false;
 
     while (r){
         blinktimer--;
@@ -135,7 +151,9 @@ int main (){
 
         int ch = getch();
         
-        if (ch == 'q'){
+
+        //keypresses and what they do belows VVV
+        if (ch == 'q'){ 
             r = 0;
         }
         if ((ch == 'a' || ch == KEY_LEFT) && Xpl > 3){
@@ -197,7 +215,7 @@ int main (){
             fireface--;
         }
 
-        ptick++;
+        ptick++; //powerup logic
         if (ptick > 6){
             ptick = 0;
             for (int i = 0; i < powerups.size(); i++){
@@ -228,7 +246,7 @@ int main (){
         }
 
 
-        btick++;
+        btick++; //bulet logic
         if (btick > 5){
             btick = 0;
             for (int i = 0; i < bullets.size(); i++){
@@ -255,7 +273,7 @@ int main (){
 
 
 
-        for (int k = 0; k < boom.size(); k++){
+        for (int k = 0; k < boom.size(); k++){ // bomb explosion logic
             if (boom[k].cdel > 0 || boom[k].timer != 16){
                 continue;
             }
@@ -273,6 +291,7 @@ int main (){
                 if (abs(x - powerups[i].x) <= 2 && abs(y - powerups[i].y) <= 2 ){
                     if (powerups[i].type == 4){
                         boom.push_back({powerups[i].x, powerups[i].y, 16, 10});
+                        
                     }
                     powerups.erase(powerups.begin() + i);
                 }
@@ -296,8 +315,36 @@ int main (){
             }
         }
 
+        mtick++; //mous formation movement heres VVV
+        if (mtick > 15){
+            mtick = 0;
+            bool hitedg = false;
+            for (int i = 0; i < mice.size(); i++){
+                if (mice[i].alive != true){
+                    continue;
+                }
+                if (dir == 1 && mice[i].x + 3 >= Xborder - 1){
+                    hitedg = true;
+                }
+                if (dir == -1 && mice[i].x <= 1){
+                    hitedg = true;
+                }
+            }
+            for (int i = 0; i < mice.size(); i++){
+                if (hitedg == true){
+                    mice[i].y++;
+                }
+                else {
+                    mice[i].x += dir;
+                }
+            }
+            if (hitedg == true){
+                dir = -dir;
+            }
+        }
 
-        erase();
+
+        erase(); //printing the actuall stuffs such as the mice and the cat and the powerups and the bombs on the screen
         mvprintw(Ypl, Xpl - 3, "%s", cat.sprite[currsprite].c_str());
         for (int i = 0; i < bullets.size(); i++){
             mvprintw(bullets[i].y, bullets[i].x, "^");
@@ -325,6 +372,12 @@ int main (){
                 for (int y = -2; y <= 2; y++){
                     mvprintw(boom[i].y + y, boom[i].x-2, "*****");
                 }
+            }
+        }
+
+        for (int i = 0; i < mice.size(); i++){
+            if (mice[i].alive == true){
+                mvprintw(mice[i].y, mice[i].x, dir == 1 ? "~o>" : "<o~");
             }
         }
         mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
