@@ -189,12 +189,15 @@ int main (){
                     break;
             }
         }
-        if (ch == '1' && powerups.size () < 1) {
+        if (ch == '1') {
             powerups.push_back({Xpl, 1, 1});
         }
 
-        if (ch == '2' && powerups.size () < 1) {
+        if (ch == '2') {
             powerups.push_back({Xpl, 1, 2});
+        }
+        if (ch == '3'){
+            powerups.push_back({Xpl, 1, 3});
         }
         if (ch == '4') {
             powerups.push_back({Xpl, 1, 4});
@@ -295,10 +298,11 @@ int main (){
                         else {
                             s += 50;
                         }
-                        if (rand() % 15 == 0){
+                        if (rand() % 8 == 0){
                             powerups.push_back({mice[m].x + 1, mice[m].y + 1, 1 + (rand() % 3)});
                         }
                         bullets.erase(bullets.begin() + i);
+                        break;
                     }
                 }
             }
@@ -337,7 +341,26 @@ int main (){
 
             if (abs(y - Ypl) <= 2 && Xpl + 3 >= x - 2 && Xpl - 3 <= x + 2){
                 lives--;
+                s -= 250;
                 hurtface = 15;
+            }
+
+            for (int i = 0; i < mice.size(); i++){
+               if (mice[i].alive == false){
+                    continue;
+               } 
+               if (abs(y - mice[i].y) <= 2 && mice[i].x + 3 >= x - 2 && mice[i].x - 3 <= x + 2){
+                    mice[i].alive = false;
+                    if (powerup == 3){
+                        s += 100;
+                    }
+                    else {
+                        s += 50;
+                    }
+                    if (rand() % 8 == 0){
+                        powerups.push_back({mice[m].x + 1, mice[m].y + 1, 1 + (rand() % 3)});
+                    }
+               }
             }
         }
 
@@ -353,8 +376,26 @@ int main (){
             }
         }
 
-        mtick++; //mous formation movement heres VVV
-        if (mtick > 15){
+
+        mtick++;
+
+        std::vector<int> alive; // mice drop bobm
+        if (mtick > 3){
+            alive.clear();
+            for (int i = 0; i < mice.size(); i++){
+                if (mice[i]. alive == true){
+                    alive.push_back(i);
+                }
+            }
+            for (int i = 0; i < alive.size(); i++){
+                if (rand() % 501 == 0){
+                    powerups.push_back({mice[alive[i]].x, mice[alive[i]].y, 4});
+                }
+            }
+        }
+
+         //mous formation movement heres VVV
+        if (mtick > 5 + alive.size()/3){
             mtick = 0;
             bool hitedg = false;
             for (int i = 0; i < mice.size(); i++){
@@ -379,6 +420,8 @@ int main (){
             if (hitedg == true){
                 dir = -dir;
             }
+
+
         }
 
 
