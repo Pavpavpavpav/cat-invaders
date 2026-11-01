@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <cstdlib>
 
 struct catsprite {
     std::vector<std::string> sprite;
@@ -14,7 +15,8 @@ struct bullet {
 };
 
 struct mouse {
-    // for when I make the enemies
+    int x, y;
+    bool alive;
 };
 
 struct powerup {
@@ -24,6 +26,13 @@ struct powerup {
     // 1 -> spreadshot
     // 2 -> frenzy
     // 3 -> double points (wip)
+    // 4 -> bomb
+};
+
+struct explosion {
+    int x,y;
+    int timer;
+    int cdel;
 };
 
 int main (){
@@ -57,6 +66,8 @@ int main (){
     int Xpl = Xborder / 2;
     int Ypl = Yborder - 4;
 
+    int lives = 3;
+    int hurtface = 0;
 
     bool r = true;
     int blinktimer = 160;
@@ -73,12 +84,32 @@ int main (){
     int poweruptime = 0;
     int powerup = 0;
 
+    std::vector<explosion> boom;
+    int bombblink = 31;
+    int bobmtype = 0;
+
     int maxbullets[] = { 2, 6, 4};
     const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
 
     while (r){
         blinktimer--;
+
+        if (lives <= 0){
+            r = false;
+        }
         
+        if (bombblink > 16){
+            bobmtype = 0;
+            bombblink--;
+        }
+        else if (bombblink <= 16 && bombblink > 0) {
+            bobmtype = 1;
+            bombblink--;
+        }
+        else {
+            bombblink = 31;
+        }
+
         if (poweruptime > 0){
             poweruptime--;
         }
@@ -147,6 +178,14 @@ int main (){
         if (ch == '2' && powerups.size () < 1) {
             powerups.push_back({Xpl, 1, 2});
         }
+        if (ch == '4') {
+            powerups.push_back({Xpl, 1, 4});
+        }
+
+        if (hurtface > 0){
+            currsprite = 2;
+            hurtface--;
+        }
 
         if (pface > 0){
             currsprite = 4;
@@ -167,9 +206,16 @@ int main (){
 
             for (int i = powerups.size() - 1; i >= 0; i--){
                 if (powerups[i].y == Ypl && (powerups[i].x >= Xpl - 3 && powerups[i].x <= Xpl + 3)){
-                    powerup = powerups[i].type;
-                    pface = 10;
-                    poweruptime = 170;
+                    switch (powerups[i].type){
+                        case 4:
+                            boom.push_back({powerups[i].x, powerups[i].y, 16, 0});
+                            break;
+                        default:
+                            powerup = powerups[i].type;
+                            pface = 10;
+                            poweruptime = 170;
+                            break;  
+                    }
                     powerups.erase(powerups.begin() + i);
                 }
             }
@@ -193,10 +239,62 @@ int main (){
             for (int i = bullets.size() - 1; i >= 0; i--){
                 if (bullets[i].y < 0){
                     bullets.erase(bullets.begin() + i);
+                    continue;
+                }
+
+                for (int p = powerups.size() - 1; p >= 0; p--){
+                    if (powerups[p].type == 4 && powerups[p].x == bullets[i].x && abs(powerups[p].y - bullets[i].y) <= 1){
+                        boom.push_back({powerups[p].x, powerups[p].y, 16, 0});
+                        bullets.erase(bullets.begin() + i);
+                        powerups.erase(powerups.begin() + p);
+                        break;
+                    }
                 }
             }
         }
 
+
+
+        for (int k = 0; k < boom.size(); k++){
+            if (boom[k].cdel > 0 || boom[k].timer != 16){
+                continue;
+            }
+
+            int x = boom[k].x; 
+            int y = boom[k].y;  
+
+            for (int i = bullets.size() - 1; i >= 0; i--){
+                if (abs(x - bullets[i].x) <= 2 && abs(y - bullets[i].y) <= 2 ) {
+                    bullets.erase(bullets.begin() + i);
+                }
+            }
+
+            for (int i = powerups.size() - 1; i >= 0; i--){
+                if (abs(x - powerups[i].x) <= 2 && abs(y - powerups[i].y) <= 2 ){
+                    if (powerups[i].type == 4){
+                        boom.push_back({powerups[i].x, powerups[i].y, 16, 10});
+                    }
+                    powerups.erase(powerups.begin() + i);
+                }
+            }
+
+            if (abs(y - Ypl) <= 2 && Xpl + 3 >= x - 2 && Xpl - 3 <= x + 2){
+                lives--;
+                hurtface = 15;
+            }
+        }
+
+        for (int i = boom.size() - 1; i >= 0; i--){
+            if (boom[i].cdel > 0){
+                boom[i].cdel--;
+            }
+            else {
+                boom[i].timer--;
+                if (boom[i].timer < 1){
+                    boom.erase(boom.begin() + i);
+                }
+            }
+        }
 
 
         erase();
@@ -205,9 +303,32 @@ int main (){
             mvprintw(bullets[i].y, bullets[i].x, "^");
         }
         for (int i = 0; i < powerups.size(); i++){
-            mvprintw(powerups[i].y, powerups[i].x, "#");
+            switch(powerups[i].type) {
+                case 4:
+                    if (bobmtype == 1){
+                        mvprintw(powerups[i].y, powerups[i].x, "@");
+                    }
+                    else {
+                        mvprintw(powerups[i].y, powerups[i].x, "O");
+                    }
+                    break;
+                default:
+                     mvprintw(powerups[i].y, powerups[i].x, "#");
+            }
+        }
+
+        for (int i = 0; i < boom.size(); i++){
+            if (boom[i].cdel > 0){
+                mvprintw(boom[i].y, boom[i].x, bobmtype == 1 ? "@" : "O" );
+            }
+            else {
+                for (int y = -2; y <= 2; y++){
+                    mvprintw(boom[i].y + y, boom[i].x-2, "*****");
+                }
+            }
         }
         mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
+        mvprintw(1, 0, "lives=%d/3", lives);
         wnoutrefresh(stdscr);
         doupdate();
 
