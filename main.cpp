@@ -97,7 +97,7 @@ int main (){
     const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
 
     std::vector<mouse> mice;
-    for (int row = 0; row < 4; row++;){
+    for (int row = 0; row < 4; row++){
         for (int col = 0; col < 8; col++){
             mice.push_back({4 + col * 5, 3 + row * 2, true});
         }
