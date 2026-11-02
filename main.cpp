@@ -20,6 +20,8 @@ struct bullet {
 struct mouse {
     int x, y;
     bool alive;
+    int row;
+    int fdel;
 };
 
 struct powerup {
@@ -45,6 +47,12 @@ int main (){
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
     curs_set(FALSE);
+    start_color();
+
+    init_pair(1, COLOR_YELLOW, COLOR_BLACK); //cat
+    init_pair(2, COLOR_RED, COLOR_BLACK); //evil stuff such as bomb and explosion
+    init_pair(3, COLOR_CYAN, COLOR_BLACK); //mice
+    init_pair(4, COLOR_GREEN, COLOR_BLACK); // powerup
 
     catsprite cat = {
         { "=^. .^=",
@@ -72,6 +80,7 @@ int main (){
     int Ypl = Yborder - 4;
 
     int lives = 3; //# of bombs the cat can withstanc
+    int nextlife = 1500; //# of points for an extra life
     int hurtface = 0;
 
     bool r = true;
@@ -97,15 +106,31 @@ int main (){
     const char* powername[] { "none", "Spreadshot", "Frenzy", "Double points"};
 
     std::vector<mouse> mice;
-    for (int row = 0; row < 4; row++){
-        for (int col = 0; col < 8; col++){
-            mice.push_back({4 + col * 5, 3 + row * 2, true});
-        }
-    }
     int dir = 1;
     int mtick = 0;
     int s = 0;
-    bool w = false;
+    int wave = 1;
+    int wstart = 0;
+    int entrtick = 0;
+
+    auto Wave = [&](){
+        mice.clear();
+        bullets.clear(); 
+        powerups.clear(); 
+        boom.clear();
+
+        dir = 1;
+        mtick = 0;
+
+        for (int row = 0; row < 4; row++){
+            for (int col = 0; col < 8; col++){
+                mice.push_back({4 + col * 5, -3, true, 3 + row * 2, col * 3 + row * 8});
+            }
+        }
+        wstart = 62;
+    };
+
+    Wave();
 
     while (r){
         blinktimer--;
@@ -147,7 +172,10 @@ int main (){
             currsprite = 0;
         }
 
-
+        if (s >= nextlife){
+            lives++
+            nextlife += 5000; 
+        }
 
         int ch = getch();
         
@@ -287,7 +315,7 @@ int main (){
 
             for (int i = bullets.size() - 1; i >= 0; i--){
                 for (int m = 0; m < mice.size(); m++){
-                    if (mice[m].alive == false){
+                    if (mice[m].alive == false || mice[m].y < 3){
                         continue;
                     }
                     if (abs(mice[m].y - bullets[i].y) <= 1 && bullets[i].x >= mice[m].x && bullets[i]. x <= mice[m].x + 2){
@@ -377,47 +405,71 @@ int main (){
         }
 
 
-        mtick++;
+        mtick++;  //mice logic from here to belows
+        entrtick++;
 
-        std::vector<int> alive; // mice drop bobm
-        alive.clear();
-        for (int i = 0; i < mice.size(); i++){
-            if (mice[i].alive == true){
+        std::vector<int> alive;
+        int entr = 0;
+
+        for (int i = 0; i < mice.size(); i++){ //counting how many are alive and making the ones that have to enter enter. oh and also the etick % value can be changed for the mice to enter slower or faster
+            if (mice[i].alive == false){
+                continue;
+            }
                 alive.push_back(i);
+            if (mice[i].fdel > 0){
+                mice[i].fdel--;
+                entr++;
             }
-        }
-        for (int i = 0; i < alive.size(); i++){
-            if (rand() % 1001 == 0){
-                powerups.push_back({mice[alive[i]].x + 1, mice[alive[i]].y + 1, 4});
+            else if (mice[i].y < mice[i].row){
+                if (entrtick % 2 == 0){
+                    mice[i].y++;
+                }
+                entr++;
             }
         }
 
-        if (alive.size() == 0){
-            w = true;
-            r = false;
+        int bobmodd = 1501 - wave * 100; //mice makes bomb to attack the cat
+        if (bobmodd < 500) {
+            bobmodd = 500;
+        }
+        if (entr == 0){
+            for (int i = 0; i < alive.size(); i++){
+                if (rand() % bobmodd == 0){
+                    powerups.push_back({mice[alive[i]].x + 1, mice[alive[i]].y + 1, 4});
+                }
+            }
+        }
+
+
+        if (alive.empty()){ //if all dead make new wave basically
+            wave++;
+            Wave();
         }
 
         for (int i = 0; i < alive.size(); i++){
-            if (mice[alive[i]].y == Ypl - 1){
+            if (mice[alive[i]].y >= Ypl - 1){
                 r = false;
             }
         }
 
-         //mous formation movement heres VVV
-        if (mtick > 5 + alive.size()/3){
+        int mtickd = 5 + (int)alive.size() / 3 - wave / 3; // ticks needed for the mice to move and do other stuff
+        if (mtickd < 1){
+            mtickd = 1;
+        }
+
+        if (entr == 0 && mtick > mtickd) {
             mtick = 0;
             bool hitedg = false;
+
             for (int i = 0; i < mice.size(); i++){
-                if (mice[i].alive != true){
+                if (mice[i].alive == false){
                     continue;
                 }
-                if (dir == 1 && mice[i].x + 3 >= Xborder - 1){
-                    hitedg = true;
-                }
-                if (dir == -1 && mice[i].x <= 1){
+                if ((dir == 1 && mice[i].x + 3 >= Xborder - 1) || (dir == -1 && mice[i].x <= 1)){
                     hitedg = true;
                 }
             }
+
             for (int i = 0; i < mice.size(); i++){
                 if (hitedg == true){
                     mice[i].y++;
@@ -429,31 +481,36 @@ int main (){
             if (hitedg == true){
                 dir = -dir;
             }
-
-
         }
-
-
+        
         erase(); //printing the actuall stuffs such as the mice and the cat and the powerups and the bombs on the screen
+        attron(COLOR_PAIR(1));
         mvprintw(Ypl, Xpl - 3, "%s", cat.sprite[currsprite].c_str());
+        attroff(COLOR_PAIR(1));
         for (int i = 0; i < bullets.size(); i++){
             mvprintw(bullets[i].y, bullets[i].x, "^");
         }
         for (int i = 0; i < powerups.size(); i++){
             switch(powerups[i].type) {
                 case 4:
+                    attron(COLOR_PAIR(2));
                     if (bobmtype == 1){
                         mvprintw(powerups[i].y, powerups[i].x, "@");
                     }
                     else {
                         mvprintw(powerups[i].y, powerups[i].x, "O");
                     }
+                    attroff(COLOR_PAIR(2));
                     break;
                 default:
-                     mvprintw(powerups[i].y, powerups[i].x, "#");
+                    attron(COLOR_PAIR(4));
+                    mvprintw(powerups[i].y, powerups[i].x, "#");
+                    attroff(COLOR_PAIR(4));
+                    break;
             }
         }
 
+        attron(COLOR_PAIR(2));
         for (int i = 0; i < boom.size(); i++){
             if (boom[i].cdel > 0){
                 mvprintw(boom[i].y, boom[i].x, bobmtype == 1 ? "@" : "O" );
@@ -464,14 +521,28 @@ int main (){
                 }
             }
         }
-
+        attroff(COLOR_PAIR(2));
+        attron(COLOR_PAIR(3));
         for (int i = 0; i < mice.size(); i++){
             if (mice[i].alive == true){
                 mvprintw(mice[i].y, mice[i].x, dir == 1 ? "~o>" : "<o~");
             }
         }
+        attroff(COLOR_PAIR(3));
         mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
-        mvprintw(1, 0, "lives=%d/3 score=%d", lives, s);
+        attron(COLOR_PAIR(2));
+        mvprintw(1, 0, "lives=");
+        attron(COLOR_PAIR(2));
+        mvprintw("%d", lives);
+        attroff(COLOR_PAIR(2));
+        mvprintw("score=%d"s);
+        attroff(COLOR_PAIR(2));
+        mvprintw(2, 0, "wave = %d", wave);
+
+        if (wstart > 0){
+            wstart--;
+            mvprintw(Yborder / 2, Xborder / 2 - 5, "WAVE %d", wave);
+        }
         wnoutrefresh(stdscr);
         doupdate();
 
@@ -479,7 +550,7 @@ int main (){
     }
 
     endwin();
-    printf(w == 1 ? "You Win :) Score:%d\n" : "You lose :( Score:%d\n", s);
+    printf("GAME OVER! Final score:%d Wave:%d \n", s, wave);
 
     return 0;
 }
