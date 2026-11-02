@@ -144,6 +144,68 @@ int main (){
     }
     int stick = 0;
 
+    bool titlescreen = true;
+    int titltick = 0;
+
+    while (titlescreen == true){
+        ttick++;
+
+        int inp = getch();
+        if (inp == 'q'){
+            endwin();
+            return 0;
+        }
+        if (inp == ' '){
+            titlescreen = false;
+        }
+
+        stick++; //bg stars logic under here
+        for (int i = 0; i < stars.size(); i++){
+            if (stick % stars[i].speed == 0){
+                stars[i].y++;
+                if (stars[i].y >= Yborder){
+                    stars[i].y = 0;
+                    stars[i].x = rand() % Xborder;
+                    stars[i].speed = 3 + rand() % 4;
+                }
+            }
+        }
+
+       erase();
+       
+        for (int i = 0; i < stars.size(); i++){
+            if (rand() % 40 == 0){
+                continue;
+            }
+            attron(A_DIM);
+            if (stars[i].speed <= 4){
+                mvprintw(stars[i].y, stars[i].x, "*");
+            }
+            else {
+                mvprintw(stars[i].y, stars[i].x, ".");
+            }
+            attroff(A_DIM);
+        }
+
+        attron(COLOR_PAIR(1) | A_BOLD);
+        mvprintw(Yborder / 2 - 4, Xborder / 2 - 11, "C A T   I N V A D E R S");
+        attroff(COLOR_PAIR(1) | A_BOLD);
+
+        attron(COLOR_PAIR(1));
+        mvprintw(Yborder / 2 - 1, Xborder / 2 - 3, "%s", catsprite[(titltick % 80 > 72) ? 1 : 0]);
+        attroff(COLOR_PAIR(1));
+
+        if ((titltick / 16) & 2 == 0){
+            mvprintw(Yborder / 2 + 2, Xborder / 2 - 10, "PRESS SPACE TO START");
+        }
+
+        mvprintw(Yborder / 2 + 4, Xborder / 2 - 15, "A/D move   SPACE shoot   Q quit");
+
+        wnoutrefresh(stdscr);
+        doupdate();
+        napms(32);
+    }
+
     Wave();
 
     while (r){
