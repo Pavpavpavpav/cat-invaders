@@ -40,6 +40,11 @@ struct explosion {
     int cdel;
 };
 
+struct bgstar{
+    int x, y;
+    int speed;
+};
+
 int main (){
     initscr();
     cbreak();
@@ -53,6 +58,9 @@ int main (){
     init_pair(2, COLOR_RED, COLOR_BLACK); //evil stuff such as bomb and explosion
     init_pair(3, COLOR_CYAN, COLOR_BLACK); //mice
     init_pair(4, COLOR_GREEN, COLOR_BLACK); // powerup
+    init_pair(5, COLOR_WHITE, COLOR_BLACK); // background
+
+    bkgd(COLOR_PAIR(5));
 
     catsprite cat = {
         { "=^. .^=",
@@ -130,6 +138,12 @@ int main (){
         wstart = 62;
     };
 
+    std::vector<bgstar> stars;
+    for (int i = 0; i < 40; i++){
+        stars.push_back({rand() % Xborder, rand() % Yborder, 3 + rand() % 4});
+    }
+    int stick = 0;
+
     Wave();
 
     while (r){
@@ -173,12 +187,25 @@ int main (){
         }
 
         if (s >= nextlife){
-            lives++
+            lives++;
             nextlife += 5000; 
         }
 
         int ch = getch();
         
+        stick++; //bg stars logic under here
+        for (int i = 0; i < stars.size(); i++){
+            if (stick % stars[i].speed == 0){
+                stars[i].y++;
+                if (stars[i].y >= Yborder){
+                    stars[i].y = 0;
+                    stars[i].x = rand() % Xborder;
+                    stars[i].speed = 3 + rand() % 4;
+                }
+            }
+        }
+
+
 
         //keypresses and what they do belows VVV
         if (ch == 'q'){ 
@@ -484,11 +511,28 @@ int main (){
         }
         
         erase(); //printing the actuall stuffs such as the mice and the cat and the powerups and the bombs on the screen
+        for (int i = 0; i < stars.size(); i++){
+            if (rand() % 40 == 0){
+                continue;
+            }
+            attron(A_DIM);
+            if (stars[i].speed <= 4){
+                mvprintw(stars[i].y, stars[i].x, "*");
+            }
+            else {
+                mvprintw(stars[i].y, stars[i].x, ".");
+            }
+            attroff(A_DIM);
+        }
+        
+        
         attron(COLOR_PAIR(1));
         mvprintw(Ypl, Xpl - 3, "%s", cat.sprite[currsprite].c_str());
         attroff(COLOR_PAIR(1));
         for (int i = 0; i < bullets.size(); i++){
+            attron(A_BOLD);
             mvprintw(bullets[i].y, bullets[i].x, "^");
+            attroff(A_BOLD);
         }
         for (int i = 0; i < powerups.size(); i++){
             switch(powerups[i].type) {
@@ -533,9 +577,9 @@ int main (){
         attron(COLOR_PAIR(2));
         mvprintw(1, 0, "lives=");
         attron(COLOR_PAIR(2));
-        mvprintw("%d", lives);
+        printw("%d", lives);
         attroff(COLOR_PAIR(2));
-        mvprintw("score=%d"s);
+        printw("score=%d", s);
         attroff(COLOR_PAIR(2));
         mvprintw(2, 0, "wave = %d", wave);
 
