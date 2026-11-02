@@ -84,11 +84,11 @@ int main (){
         return 1;
     }
 
-    int Xpl = Xborder / 2;
+    int Xpl = Xborder / 2 - 2;
     int Ypl = Yborder - 4;
 
     int lives = 3; //# of bombs the cat can withstanc
-    int nextlife = 1500; //# of points for an extra life
+    int nextlife = 5000; //# of points for an extra life
     int hurtface = 0;
 
     bool r = true;
@@ -121,7 +121,7 @@ int main (){
     int wstart = 0;
     int entrtick = 0;
 
-    auto Wave = [&](){
+    auto Wave = [&](){ //initiate spawn of mice
         mice.clear();
         bullets.clear(); 
         powerups.clear(); 
@@ -132,7 +132,7 @@ int main (){
 
         for (int row = 0; row < 4; row++){
             for (int col = 0; col < 8; col++){
-                mice.push_back({4 + col * 5, -3, true, 3 + row * 2, col * 3 + row * 8});
+                mice.push_back({10 + col * 5, -3, true, 3 + row * 2, col * 3 + row * 8});
             }
         }
         wstart = 62;
@@ -147,8 +147,8 @@ int main (){
     bool titlescreen = true;
     int titltick = 0;
 
-    while (titlescreen == true){
-        ttick++;
+    while (titlescreen == true){ //titlescreen this while function
+        titltick++;
 
         int inp = getch();
         if (inp == 'q'){
@@ -188,14 +188,15 @@ int main (){
         }
 
         attron(COLOR_PAIR(1) | A_BOLD);
-        mvprintw(Yborder / 2 - 4, Xborder / 2 - 11, "C A T   I N V A D E R S");
+        mvprintw(Yborder / 2 - 4, Xborder / 2 - 12, "C A T    I N V A D E R S");
+        mvprintw(Yborder / 2 - 3, Xborder / 2 - 20, "made by pav! - inspo from space invaders");
         attroff(COLOR_PAIR(1) | A_BOLD);
 
         attron(COLOR_PAIR(1));
-        mvprintw(Yborder / 2 - 1, Xborder / 2 - 3, "%s", catsprite[(titltick % 80 > 72) ? 1 : 0]);
+        mvprintw(Yborder / 2 - 1, Xborder / 2 - 3, "%s", cat.sprite[(titltick % 80 > 72) ? 1 : 0].c_str());
         attroff(COLOR_PAIR(1));
 
-        if ((titltick / 16) & 2 == 0){
+        if ((titltick / 16) % 2 == 0){
             mvprintw(Yborder / 2 + 2, Xborder / 2 - 10, "PRESS SPACE TO START");
         }
 
@@ -208,6 +209,7 @@ int main (){
 
     Wave();
 
+    beep();
     while (r){
         blinktimer--;
 
@@ -287,6 +289,7 @@ int main (){
                     bullets.push_back({Xpl, Ypl - 1, 0});
                     bullets.push_back({Xpl, Ypl - 1, 1});
                     fireface = 10;
+                    beep();
                     cooldown = 32;
                     }
                     break;
@@ -294,6 +297,7 @@ int main (){
                     if (bullets.size() <= 3){
                         bullets.push_back({Xpl, Ypl - 1, 0});
                         fireface = 10;
+                        beep();
                         cooldown = 8;
                     }
                     break;
@@ -301,6 +305,7 @@ int main (){
                     if (bullets.size() <= 1){
                         bullets.push_back({Xpl, Ypl - 1, 0});
                         fireface = 10;
+                        beep();
                         cooldown = 32;
                     }
                     break;
@@ -349,6 +354,7 @@ int main (){
                             boom.push_back({powerups[i].x, powerups[i].y, 16, 0});
                             break;
                         default:
+                            beep();
                             powerup = powerups[i].type;
                             pface = 10;
                             poweruptime = 170;
@@ -409,6 +415,7 @@ int main (){
                     }
                     if (abs(mice[m].y - bullets[i].y) <= 1 && bullets[i].x >= mice[m].x && bullets[i]. x <= mice[m].x + 2){
                         mice[m].alive = false;
+                        beep();
                         if (powerup == 3){
                             s += 100;
                         }
@@ -431,6 +438,8 @@ int main (){
             if (boom[k].cdel > 0 || boom[k].timer != 16){
                 continue;
             }
+
+            beep();
 
             int x = boom[k].x; 
             int y = boom[k].y;  
@@ -573,7 +582,7 @@ int main (){
         }
         
         erase(); //printing the actuall stuffs such as the mice and the cat and the powerups and the bombs on the screen
-        for (int i = 0; i < stars.size(); i++){
+        for (int i = 0; i < stars.size(); i++){ //star print
             if (rand() % 40 == 0){
                 continue;
             }
@@ -588,15 +597,15 @@ int main (){
         }
         
         
-        attron(COLOR_PAIR(1));
+        attron(COLOR_PAIR(1)); //cat print
         mvprintw(Ypl, Xpl - 3, "%s", cat.sprite[currsprite].c_str());
         attroff(COLOR_PAIR(1));
-        for (int i = 0; i < bullets.size(); i++){
+        for (int i = 0; i < bullets.size(); i++){ //bullet print
             attron(A_BOLD);
             mvprintw(bullets[i].y, bullets[i].x, "^");
             attroff(A_BOLD);
         }
-        for (int i = 0; i < powerups.size(); i++){
+        for (int i = 0; i < powerups.size(); i++){ //powerup & bomb print
             switch(powerups[i].type) {
                 case 4:
                     attron(COLOR_PAIR(2));
@@ -616,7 +625,7 @@ int main (){
             }
         }
 
-        attron(COLOR_PAIR(2));
+        attron(COLOR_PAIR(2)); //explosion/boom or whatever print
         for (int i = 0; i < boom.size(); i++){
             if (boom[i].cdel > 0){
                 mvprintw(boom[i].y, boom[i].x, bobmtype == 1 ? "@" : "O" );
@@ -629,23 +638,22 @@ int main (){
         }
         attroff(COLOR_PAIR(2));
         attron(COLOR_PAIR(3));
-        for (int i = 0; i < mice.size(); i++){
+        for (int i = 0; i < mice.size(); i++){ //mice print
             if (mice[i].alive == true){
                 mvprintw(mice[i].y, mice[i].x, dir == 1 ? "~o>" : "<o~");
             }
         }
-        attroff(COLOR_PAIR(3));
+        attroff(COLOR_PAIR(3)); //HUD PRINT
         mvprintw(0, 0, "bullets=%d/%d cooldown=%.1f powertime=%d power=%s", (int)bullets.size(), maxbullets[powerup], cooldown/31, poweruptime/31, powername[powerup]);
-        attron(COLOR_PAIR(2));
         mvprintw(1, 0, "lives=");
         attron(COLOR_PAIR(2));
         printw("%d", lives);
         attroff(COLOR_PAIR(2));
-        printw("score=%d", s);
+        printw(" score=%d", s);
         attroff(COLOR_PAIR(2));
         mvprintw(2, 0, "wave = %d", wave);
 
-        if (wstart > 0){
+        if (wstart > 0){ //The giant WAVE: # thing that appears
             wstart--;
             mvprintw(Yborder / 2, Xborder / 2 - 5, "WAVE %d", wave);
         }
@@ -656,7 +664,65 @@ int main (){
     }
 
     endwin();
-    printf("GAME OVER! Final score:%d Wave:%d \n", s, wave);
+
+    int gotick = 0;
+    bool goscreen = true;
+
+    while (goscreen == true){ //Game over screen
+        gotick++;
+
+        int inp = getch();
+        if (gotick > 100 && inp == ' ' || inp == 'q'){
+            goscreen = false;
+        }
+
+         stick++; //bg stars logic under here
+        for (int i = 0; i < stars.size(); i++){
+            if (stick % stars[i].speed == 0){
+                stars[i].y++;
+                if (stars[i].y >= Yborder){
+                    stars[i].y = 0;
+                    stars[i].x = rand() % Xborder;
+                    stars[i].speed = 3 + rand() % 4;
+                }
+            }
+        }
+
+       erase();
+       
+        for (int i = 0; i < stars.size(); i++){
+            if (rand() % 40 == 0){
+                continue;
+            }
+            attron(A_DIM);
+            if (stars[i].speed <= 4){
+                mvprintw(stars[i].y, stars[i].x, "*");
+            }
+            else {
+                mvprintw(stars[i].y, stars[i].x, ".");
+            }
+            attroff(A_DIM);
+        }
+
+        attron(COLOR_PAIR(2) | A_BOLD);
+        mvprintw(Yborder / 2 - 4, Xborder / 2 - 5, "GAME  OVER");
+        attroff(COLOR_PAIR(2) | A_BOLD);
+
+        attron(COLOR_PAIR(1));
+        mvprintw(Yborder / 2 - 2, Xborder / 2 - 3, "%s", cat.sprite[2].c_str());
+        attroff(COLOR_PAIR(1));
+
+        mvprintw(Yborder / 2, Xborder / 2 - 5, "SCORE: %d", s);
+        mvprintw(Yborder / 2 + 1, Xborder / 2 - 5, "WAVE: %d", wave);
+
+        if ((gotick / 16) % 2 == 0){
+            mvprintw(Yborder / 2 + 4, Xborder / 2 - 9, "PRESS SPACE TO EXIT");
+        }
+
+        wnoutrefresh(stdscr);
+        doupdate();
+        napms(32);
+    }
 
     return 0;
 }
