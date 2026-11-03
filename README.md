@@ -15,3 +15,5 @@ To play the game, download either the .exe file or the zip, and run it. Dismiss 
 hastags - powerups
 =^. .^= - cat
 ^ - bullets
+
+made by pav, feel free to use this code as a base for your own game or for just making a reskin of it!
